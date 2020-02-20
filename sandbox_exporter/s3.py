@@ -139,7 +139,8 @@ class S3Helper(AWS_helper):
             'count': '',
             'limit': '',
             'output_fields': '',
-            'where': ''
+            'where': '',
+            'profile': ''
         }
         if self.aws_profile:
             command_params['profile'] = '--profile {}'.format(self.aws_profile)

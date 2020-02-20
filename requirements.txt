@@ -1,0 +1,1 @@
+git+https://https://github.com/usdot-its-jpo-data-portal/s3select@make-importable#egg=s3select

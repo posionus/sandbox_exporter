@@ -1,0 +1,8 @@
+.serverless
+.DS_Store
+.git
+
+*.egg-info
+*.pyc
+*.pyo
+*.zip

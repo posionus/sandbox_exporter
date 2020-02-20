@@ -32,7 +32,7 @@ class SandboxExporter(object):
 
     def __init__(self, bucket='usdot-its-cvpilot-public-data', log=False,
                 output_convention='{pilot}_{message_type}_{sdate}_{edate}',
-                aws_profile="default", verbose=False):
+                aws_profile=None, verbose=False):
         # set up
         self.bucket = bucket
         self.output_convention = output_convention
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--edate', default=None, help="Ending generatedAt date of your data, in the format of YYYY-MM-DD. If not supplied, this will be set to 24 hours from the start date.")
     parser.add_argument('--output_convention', default='{pilot}_{message_type}_{sdate}_{edate}', help="Supply string for naming convention of output file. Variables available for use in this string include: pilot, messate_type, sdate, edate. Note that a file number will always be appended to the output file name. Default: {pilot}_{message_type}_{sdate}_{edate}")
     parser.add_argument('--json', default=False, action='store_true', help="Supply flag if file is to be exported as newline json instead of CSV file. Default: False")
-    parser.add_argument('--aws_profile', default='default', help="Supply name of AWS profile if not using default profile. AWS profile must be configured in ~/.aws/credentials on your machine. See https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file for more information.")
+    parser.add_argument('--aws_profile', default=None, help="Supply name of AWS profile if not using default profile. AWS profile must be configured in ~/.aws/credentials on your machine. See https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file for more information.")
     parser.add_argument('--zip', default=False, action='store_true', help="Supply flag if output files should be zipped together. Default: False")
     parser.add_argument('--log', default=False, action='store_true', help="Supply flag if script progress should be logged and not printed to the console. Default: False")
     parser.add_argument('--verbose', default=False, action='store_true', help="Supply flag if script progress should be verbose. Cost information associated with your query will be printed if verbose. Default: False")

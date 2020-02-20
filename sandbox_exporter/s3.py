@@ -142,23 +142,23 @@ class S3Helper(AWS_helper):
             'where': '',
             'profile': ''
         }
-        if self.aws_profile:
-            command_params['profile'] = '--profile {}'.format(self.aws_profile)
+        if self.aws_profile and self.aws_profile !='default':
+            command_params['profile'] = '--profile {} '.format(self.aws_profile)
         if self.verbose:
-            command_params['verbose'] = '-v'
+            command_params['verbose'] = '-v '
         if thread_count:
-            command_params['thread_count'] = '-t {}'.format(thread_count)
+            command_params['thread_count'] = '-t {} '.format(thread_count)
         if count:
-            command_params['count'] = '-c'
+            command_params['count'] = '-c '
         if limit:
-            command_params['limit'] = '-l {}'.format(limit)
+            command_params['limit'] = '-l {} '.format(limit)
         if output_fields:
-            command_params['output_fields'] = '-o "{}"'.format(output_fields)
+            command_params['output_fields'] = '-o "{}" '.format(output_fields)
         if where:
-            command_params['where'] = '-w "{}"'.format(where)
+            command_params['where'] = '-w "{}" '.format(where)
 
-        command = 's3select {where} {limit} {verbose} {count} {output_fields} {thread_count} {profile} {prefixes}'.format(**command_params)
-        # self.print_func(command)
+        command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{prefixes}'.format(**command_params)
+        self.print_func(command)
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
             line = process.stdout.readline().rstrip()

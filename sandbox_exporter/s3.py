@@ -158,7 +158,7 @@ class S3Helper(AWS_helper):
             command_params['where'] = '-w "{}" '.format(where)
 
         command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{prefixes}'.format(**command_params)
-        self.print_func(command)
+        # self.print_func(command)
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
             line = process.stdout.readline().rstrip()

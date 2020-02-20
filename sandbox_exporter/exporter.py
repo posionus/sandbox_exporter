@@ -211,7 +211,7 @@ if __name__ == '__main__':
                        [--where WHERE]
 
     Script for exporting ITS sandbox data from specified date range to merged CSV
-    files.
+    files or JSON newline files.
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -244,8 +244,9 @@ if __name__ == '__main__':
                             Default: False
       --log                 Supply flag if script progress should be logged and
                             not printed to the console. Default: False
-      --verbose             Supply flag if script progress should be verbose.
-                            Default: False
+      --verbose             Supply flag if script progress should be verbose. Cost
+                            information associated with your query will be printed
+                            if verbose. Default: False
       --limit LIMIT         Maximum number of results to return. Default: no limit
       --output_fields OUTPUT_FIELDS
                             What fields or columns to output. Supply a comma
@@ -261,13 +262,13 @@ if __name__ == '__main__':
                             supply a WHERE clause.
 
     Sample Usage
-    Retrieve all WYDOT TIM data from 2019-09-16:
+    Retrieve all WYDOT BSM data from 2020-01-22:
     python -u sandbox_exporter/exporter.py --pilot wydot --message_type bsm --sdate 2020-01-22
 
-    Retrieve all WYDOT TIM data between 2020-01-22 to 2019-09-18:
+    Retrieve all WYDOT BSM data between 2020-01-22:
     python -u sandbox_exporter/exporter.py --pilot wydot --message_type bsm --sdate 2020-01-22
 
-    Retrieve all WYDOT TIM data between 2020-01-22 to 2020-01-24 in json newline format (instead of flattened CSV),
+    Retrieve all WYDOT BSM data between 2020-01-22 to 2020-01-24 in json newline format (instead of flattened CSV),
     only retrieving the metadata field:
     python -u sandbox_exporter/exporter.py --pilot wydot --message_type bsm --sdate 2020-01-22 --edate 2020-01-24 --json --output_fields 's.metadata' --verbose
     """
@@ -283,7 +284,7 @@ if __name__ == '__main__':
     parser.add_argument('--aws_profile', default='default', help="Supply name of AWS profile if not using default profile. AWS profile must be configured in ~/.aws/credentials on your machine. See https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#shared-credentials-file for more information.")
     parser.add_argument('--zip', default=False, action='store_true', help="Supply flag if output files should be zipped together. Default: False")
     parser.add_argument('--log', default=False, action='store_true', help="Supply flag if script progress should be logged and not printed to the console. Default: False")
-    parser.add_argument('--verbose', default=False, action='store_true', help="Supply flag if script progress should be verbose. Default: False")
+    parser.add_argument('--verbose', default=False, action='store_true', help="Supply flag if script progress should be verbose. Cost information associated with your query will be printed if verbose. Default: False")
     parser.add_argument('--limit', type=int, default=0, help="Maximum number of results to return. Default: no limit")
     parser.add_argument('--output_fields', default=None, help="What fields or columns to output. Supply a comma delimited string of the field names, assuming that the record is 's'. For example, if you want to retrieve fields 'metadata' and 'payload.coreData' only, supply 's.metadata,s.payload.coreData'. Default: all fields will be returned.")
     parser.add_argument('--where', default=None, help="WHERE part of the SQL query. Assume that the record is 's'. For example, a query could look like this: s.metadata.bsmSource='RV' and s.payload.data.coreData.speed < 15. Default: not supply a WHERE clause.")

@@ -25,10 +25,11 @@ These instructions will get you a copy of the project up and running on your loc
 ### Installation
 
 1. Download the script by cloning the module's [code repository on GitHub](https://github.com/usdot-its-jpo-data-portal/wzdx_sandbox). You can do so by running one of the following in command line. If unfamiliar with how to clone a repository, follow the [official GitHub guide](https://help.github.com/en/articles/cloning-a-repository).
-  - via HTTP: `git clone https://github.com/usdot-its-jpo-data-portal/sandbox_exporter.git`
-  - via SSH (if using 2-factor authentication): `git clone git@github.com:usdot-its-jpo-data-portal/sandbox_exporter.git`
+    - via HTTP: `git clone https://github.com/usdot-its-jpo-data-portal/sandbox_exporter.git`
+    - via SSH (if using 2-factor authentication): `git clone git@github.com:usdot-its-jpo-data-portal/sandbox_exporter.git`
 2. Navigate into the repository folder by entering `cd sandbox_exporter` in command line.
-3. Install the required packages by running `pip install -r requirements.txt`.
+3. Run `pip install -e .` to install the sandbox_exporter Python package.
+4. Install the required packages by running `pip install -r requirements.txt`.
 
 ### Usage
 

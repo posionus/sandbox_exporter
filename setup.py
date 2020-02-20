@@ -4,7 +4,7 @@ import setuptools
 setuptools.setup(
     name='sandbox_exporter',
     version='0.0.13',
-    scripts=['sandbox_exporter/sandbox_to_csv.py'],
+    scripts=['sandbox_exporter/exporter.py'],
     author="Chueh Lien",
     author_email="lien_julia@bah.com",
     description="S3 select utility package",

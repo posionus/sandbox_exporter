@@ -193,7 +193,7 @@ class SandboxExporter(object):
         if zip_files:
             self.zip_files(fp_params, filenames)
         else:
-            self.print_func('Output files:\n{}'.format('\n'.join(filenames)))
+            self.print_func('Output files:\n{}\n'.format('\n'.join(filenames)))
 
         for info in self.s3helper.info:
             self.print_func(info)

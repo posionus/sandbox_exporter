@@ -53,11 +53,11 @@ class AWS_helper(object):
                 session = boto3.session.Session()
         except botocore.exceptions.ProfileNotFound:
             self.print_func('Please supply a valid AWS profile name.')
-            exit()
+            raise
         except:
             self.print_func(traceback.format_exc())
             self.print_func('Exiting. Unable to establish AWS session with the following profile name: {}'.format(self.aws_profile))
-            exit()
+            raise
         return session
 
 
@@ -162,6 +162,9 @@ class S3Helper(AWS_helper):
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
             line = process.stdout.readline().rstrip()
+            stderr = process.stderr.readline()
+            if stderr.decode('utf-8'):
+                self.print_func(stderr.decode('utf-8'), flush=True)
             if not line:
                 stderr = process.stderr.read().splitlines()
                 if len(stderr) > 4:

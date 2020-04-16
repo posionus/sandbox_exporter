@@ -13,15 +13,18 @@ Run the below in command line to get more information:
 """
 from __future__ import print_function
 from argparse import ArgumentParser
+import boto3
 from copy import copy
+import csv
 import dateutil.parser
 from datetime import datetime, timedelta
 from functools import reduce
 import json
 import logging
 import os
-import csv
+import sys
 import time
+import traceback
 import zipfile
 
 from sandbox_exporter.flattener import load_flattener, DataFlattener
@@ -125,8 +128,6 @@ class SandboxExporter(object):
         generator = self.s3helper.select(prefixes=" ".join(prefixes), limit=limit,
                                          output_fields=output_fields, where=where)
         records = list(generator)
-        for info in self.s3helper.info:
-            self.print_func(info)
         return records
 
     def get_count(self, sdate, edate=None, pilot=None, message_type=None,

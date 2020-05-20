@@ -17,7 +17,7 @@ class WzdxV2Flattener(DataFlattener):
     '''
     def __init__(self, *args, **kwargs):
         super(WzdxV2Flattener, self).__init__(*args, **kwargs)
-        self.json_string_fields = ['lanes', 'geometry', 'restrictions']
+        self.json_string_fields = ['lanes', 'geometry', 'restrictions', 'types_of_work']
 
     def process_and_split(self, raw_rec):
         out_recs = []

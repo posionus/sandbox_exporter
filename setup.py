@@ -19,5 +19,8 @@ setuptools.setup(
     ],
     install_requires=['requests[security]>=2.18.3',
                       'pyasn1>=0.4.2',
-                      'boto3>=1.7.79']
+                      'boto3>=1.7.79',
+                      'sodapy==2.0.0',
+                      'https://github.com/usdot-its-jpo-data-portal/s3select@make-importable#egg=s3select'
+                      ]
 )

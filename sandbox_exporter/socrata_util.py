@@ -4,6 +4,7 @@ Helper class for loading data to Socrata datasets on data.transportation.gov.
 '''
 import boto3
 import copy
+import dateutil.parser
 import itertools
 import json
 import logging
@@ -58,8 +59,17 @@ class SocrataDataset(object):
         col_dtype_dict = col_dtype_dict or self.col_dtype_dict
         float_fields = float_fields or self.float_fields
 
+        def calendar_date(x):
+            dt = dateutil.parser.parse(x)
+            if dt.tzinfo:
+                dt = dt - dt.utcoffset()
+                dt = dt.replace(tzinfo=None)
+            return dt.isoformat()
+
         identity = lambda x: x
-        dtype_func = {'number': float, 'text': str, 'checkbox': bool}
+        dtype_func = {
+            'number': float, 'text': str, 'checkbox': bool,
+            'calendar_date': calendar_date}
         out = {}
         for k,v in rec.items():
             if k in float_fields and k in col_dtype_dict:

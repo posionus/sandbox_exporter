@@ -21,6 +21,6 @@ setuptools.setup(
                       'pyasn1>=0.4.2',
                       'boto3>=1.7.79',
                       'sodapy==2.0.0',
-                      's3select @ git+ssh://git@github.com/usdot-its-jpo-data-portal/s3select@make-importable#egg=s3select'
+                      's3select @ git+ssh://git@github.com/usdot-its-jpo-data-portal/s3select@master#egg=s3select'
                       ]
 )

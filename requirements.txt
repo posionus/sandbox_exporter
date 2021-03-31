@@ -1,3 +1,4 @@
 git+https://github.com/usdot-its-jpo-data-portal/s3select@master#egg=s3select
 sodapy
 requests
+python-dateutil

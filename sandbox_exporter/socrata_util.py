@@ -2,13 +2,8 @@
 Helper class for loading data to Socrata datasets on data.transportation.gov.
 
 '''
-import boto3
-import copy
 import dateutil.parser
-import itertools
-import json
 import logging
-import os
 import requests
 from sodapy import Socrata
 import time

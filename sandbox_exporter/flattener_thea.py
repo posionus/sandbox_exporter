@@ -1,7 +1,5 @@
 import copy
-import dateutil.parser
 import json
-import random
 
 from sandbox_exporter.flattener import CvDataFlattener
 

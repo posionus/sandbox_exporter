@@ -3,19 +3,25 @@ import dateutil.parser
 import json
 import random
 import re
+import traceback
 
 import sandbox_exporter
 
-def load_flattener(key):
+
+def load_flattener(key=None):
     '''
     Load appropriate data flattener based on pilot site and message type
     '''
-    pilot, message_type = key.split('/')[:2]
+    pilot = None
     try:
+        pilot, message_type = key.split('/')[:2]
         pilot_flattener = getattr(sandbox_exporter, 'flattener_{}'.format(pilot))
-        flattener = getattr(pilot_flattener, '{}{}Flattener'.format(pilot.title(), message_type))
+        flattener = getattr(pilot_flattener, '{}{}Flattener'.format(pilot.title(), message_type.upper()))
     except:
-        print('flattener_{}.{}{}Flattener not found. Load generic CVP flattener.'.format(pilot, pilot.title(), message_type))
+        if pilot:
+            print('flattener_{}.{}{}Flattener not found.'.format(pilot, pilot.title(), message_type.upper()))
+            print(traceback.format_exc())
+        print('Load generic CVP flattener.')
         pilot_flattener = getattr(sandbox_exporter, 'flattener')
         flattener = getattr(pilot_flattener, 'CvDataFlattener')
     return flattener

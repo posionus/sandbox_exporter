@@ -74,36 +74,35 @@ class SocrataDataset(object):
         for k,v in rec.items():
             if k in float_fields and k in col_dtype_dict:
                 out[k] = float(v)
-            elif k in col_dtype_dict:
-                if v != None and v != '':
-                    out[k] = dtype_func.get(col_dtype_dict.get(k, 'nonexistentKey'), identity)(v)
+            elif k in col_dtype_dict and v is not None and v != '':
+                out[k] = dtype_func.get(col_dtype_dict.get(k, 'nonexistentKey'), identity)(v)
         out = {k:v for k,v in out.items() if k in col_dtype_dict}
         return out
 
     def create_new_draft(self):
-        draftDataset = requests.post('https://{}/api/views/{}/publication.json'.format(self.client.domain, self.dataset_id),
+        draft_dataset = requests.post('https://{}/api/views/{}/publication.json'.format(self.client.domain, self.dataset_id),
                                   auth=(self.socrata_params['username'], self.socrata_params['password']),
                                   params={'method': 'copySchema'})
-        logger.info(draftDataset.json())
-        draftId = draftDataset.json()['id']
-        return draftId
+        logger.info(draft_dataset.json())
+        draft_id = draft_dataset.json()['id']
+        return draft_id
 
-    def publish_draft(self, draftId):
+    def publish_draft(self, draft_id):
         time.sleep(5)
-        publishResponse = requests.post('https://{}/api/views/{}/publication.json'.format(self.client.domain, draftId),
+        publish_response = requests.post('https://{}/api/views/{}/publication.json'.format(self.client.domain, draft_id),
                                         auth=(self.socrata_params['username'], self.socrata_params['password']))
-        logger.info(publishResponse.json())
-        return publishResponse
+        logger.info(publish_response.json())
+        return publish_response
 
-    def delete_draft(self, draftId):
+    def delete_draft(self, draft_id):
         time.sleep(5)
-        deleteResponse = self.client.delete(draftId)
-        if deleteResponse.status_code == 200:
-            logger.info('Empty draft {} has been discarded.'.format(draftId))
-        return deleteResponse
+        delete_response = self.client.delete(draft_id)
+        if delete_response.status_code == 200:
+            logger.info('Empty draft {} has been discarded.'.format(draft_id))
+        return delete_response
 
     def clean_and_upsert(self, recs, dataset_id=None):
         dataset_id = dataset_id or self.dataset_id
         out_recs = [self.mod_dtype(r) for r in recs]
-        uploadResponse = self.client.upsert(dataset_id, out_recs)
-        return uploadResponse
+        upload_response = self.client.upsert(dataset_id, out_recs)
+        return upload_response

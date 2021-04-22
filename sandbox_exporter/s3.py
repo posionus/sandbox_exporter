@@ -186,19 +186,17 @@ class S3Helper(AWSHelper):
             command_params['where'] = '-w "{}" '.format(where)
 
         command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{prefixes}'.format(**command_params)
-        # self.print_func(command)
+        self.print_func(command)
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
             line = process.stdout.readline().rstrip()
-            stderr = process.stderr.readline()
-            if stderr.decode('utf-8'):
-                self.print_func(stderr.decode('utf-8'))
             if not line:
                 stderr = process.stderr.read().splitlines()
                 for i in stderr:
+                    if i[:3] != b'\x1b[K':
+                        print(i.decode('utf-8'))
+                if stderr[-1][:3] == b'\x1b[K':
                     print(i.decode('utf-8'))
-                if len(stderr) > 4:
-                    self.info = [i.decode('utf-8').replace('\x1b[K', '') for i in stderr[-5:]]
                 break
             if not count:
                 yield json.loads(line)

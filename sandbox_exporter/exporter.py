@@ -42,8 +42,8 @@ class Exporter(object):
             logger = logging.getLogger()
             logger.setLevel(logging.INFO)
             self.print_func = logger.info
-        # if not log and not verbose:
-        #     self.print_func = lambda x: 1
+        if not log and not verbose:
+            self.print_func = lambda x: 1
 
     def write_json_newline(self, recs, fp):
         with open(fp, 'w') as outfile:

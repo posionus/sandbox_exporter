@@ -15,7 +15,7 @@ import uuid
 from subprocess import Popen, PIPE
 
 
-class AWS_helper(object):
+class AWSHelper(object):
     """
     Helper class for connecting to AWS.
 
@@ -35,7 +35,7 @@ class AWS_helper(object):
                 logged instead of printed. If not, information will be printed.
         """
         self.aws_profile = aws_profile
-        self.print_func = print
+        self.print_func = lambda x: print(x, flush=True)
         if logger:
             self.print_func = logger.info
         self.session = self._create_aws_session()
@@ -66,7 +66,7 @@ class AWS_helper(object):
         return session
 
 
-class S3Helper(AWS_helper):
+class S3Helper(AWSHelper):
     """
     Helper class for connecting to and working with AWS S3.
 
@@ -192,9 +192,11 @@ class S3Helper(AWS_helper):
             line = process.stdout.readline().rstrip()
             stderr = process.stderr.readline()
             if stderr.decode('utf-8'):
-                self.print_func(stderr.decode('utf-8'), flush=True)
+                self.print_func(stderr.decode('utf-8'))
             if not line:
                 stderr = process.stderr.read().splitlines()
+                for i in stderr:
+                    print(i.decode('utf-8'))
                 if len(stderr) > 4:
                     self.info = [i.decode('utf-8').replace('\x1b[K', '') for i in stderr[-5:]]
                 break

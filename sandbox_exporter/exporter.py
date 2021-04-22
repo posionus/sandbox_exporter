@@ -94,7 +94,7 @@ class SandboxExporter(Exporter):
         if 'workzone' in self.bucket:
             folder = '{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m)
         else:
-            folder = '{}/{}/{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m, d, h)
+            folder = '{}/{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m, d)
         return folder
 
     def clean_dates(self, sdate, edate):
@@ -145,7 +145,6 @@ class SandboxExporter(Exporter):
     def get_count(self, sdate, edate=None, pilot=None, message_type=None,
                   output_fields=None, where=None):
         prefixes = self.get_prefixes(sdate, edate, pilot, message_type)
-        # print(" ".join(prefixes))
         generator = self.s3helper.select(prefixes=" ".join(prefixes), count=True,
                                          output_fields=output_fields, where=where)
         count = sum([int(i) for i in list(generator)])
@@ -238,7 +237,7 @@ if __name__ == '__main__':
                             Message type (options: bsm, tim, spat). Default: tim
       --sdate SDATE         Starting generatedAt date of your data, in the format
                             of YYYY-MM-DD.
-      --edate EDATE         Ending generatedAt date of your data, in the format of
+      --edate EDATE         Ending generatedAt date of your data (exclusive), in the format of
                             YYYY-MM-DD. If not supplied, this will be set to 24
                             hours from the start date.
       --output_convention OUTPUT_CONVENTION

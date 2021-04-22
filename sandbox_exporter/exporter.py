@@ -145,10 +145,10 @@ class SandboxExporter(Exporter):
     def get_count(self, sdate, edate=None, pilot=None, message_type=None,
                   output_fields=None, where=None):
         prefixes = self.get_prefixes(sdate, edate, pilot, message_type)
-        print(" ".join(prefixes))
+        # print(" ".join(prefixes))
         generator = self.s3helper.select(prefixes=" ".join(prefixes), count=True,
                                          output_fields=output_fields, where=where)
-        count = int(list(generator)[0])
+        count = sum([int(i) for i in list(generator)])
         for info in self.s3helper.info:
             self.print_func(info)
         return count

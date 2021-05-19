@@ -10,7 +10,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-1. Have access to Python 3.6+. You can check your python version by entering `python --version` and `python3 --version` in command line.
+1. Have access to [Python 3.6+](https://www.python.org/downloads/). You can check your python version by entering `python --version` and `python3 --version` in command line.
 2. Have access to the command line of a machine. If you're using a Mac, the command line can be accessed via the [Terminal](https://support.apple.com/guide/terminal/welcome/mac), which comes with Mac OS. If you're using a PC, the command line can be accessed via the Command Prompt, which comes with Windows, or via [Cygwin64](https://www.cygwin.com/), a suite of open source tools that allow you to run something similar to Linux on Windows.
 3. Have your own Free Amazon Web Services account.
 	- Create one at http://aws.amazon.com
@@ -115,8 +115,10 @@ Example Usage in command line:
 
 ## Built With
 
-* [Python 3.6+](https://www.python.org/download/releases/3.0):
+* [Python 3.6+](https://www.python.org/download/releases/3.0)
 * [s3select](https://github.com/usdot-its-jpo-data-portal/s3select): S3select package forked from [Marko Bastovanovic's repository](https://github.com/vast-engineering/s3select). Used to interact with AWS's S3 Select API.
+* [requests](https://pypi.org/project/requests/) 
+* [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html?id=docs_gateway)
 
 ## Contributing
 

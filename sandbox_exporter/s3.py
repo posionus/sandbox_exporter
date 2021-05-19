@@ -80,6 +80,7 @@ class S3Helper(AWSHelper):
         self.client = self._get_client()
         self.info = []
         self.err_lines = []
+        self.queue_timeout = 10
 
     def _get_client(self):
         """
@@ -168,7 +169,8 @@ class S3Helper(AWSHelper):
             'limit': '',
             'output_fields': '',
             'where': '',
-            'profile': ''
+            'profile': '',
+            'queue_timeout': ''
         }
         if self.aws_profile and self.aws_profile !='default':
             command_params['profile'] = '--profile {} '.format(self.aws_profile)
@@ -184,8 +186,10 @@ class S3Helper(AWSHelper):
             command_params['output_fields'] = '-o "{}" '.format(output_fields)
         if where:
             command_params['where'] = '-w "{}" '.format(where)
+        if self.queue_timeout:
+            command_params['queue_timeout'] = f'-T {self.queue_timeout} '
 
-        command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{prefixes}'.format(**command_params)
+        command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{queue_timeout}{prefixes}'.format(**command_params)
         self.print_func(command)
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
@@ -205,7 +209,6 @@ class S3Helper(AWSHelper):
             if not count:
                 yield json.loads(line)
             else:
-                print(line)
                 yield line
 
     def get_data_stream(self, bucket, key):

@@ -400,8 +400,11 @@ class CvPilotFileMover(S3Helper):
         if 'nycdot-ingest' in source_bucket:
             data = data_stream.read()
             event_record = json.loads(data)
-            event_time_bin = event_record['eventHeader']['eventTimeBin']
-            event_time_bin_processed = '/'.join(event_time_bin.split('-'))
+            event_time_bin = event_record['eventHeader']['eventTimeBin'].replace('/', '')
+            event_time_bin_array = event_time_bin.split('-')
+            if len(event_time_bin_array[0]) == 2:
+                event_time_bin_array[0] = '20'+event_time_bin_array[0]
+            event_time_bin_processed = '/'.join(event_time_bin_array)
             source_key_processed = source_key.split('/')[-1].replace(".gz", "")
             target_key = f"nycdot/EVENT/{event_time_bin_processed}/{source_key_processed}"
             

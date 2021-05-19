@@ -22,7 +22,6 @@ from functools import reduce
 import json
 import logging
 import os
-import sys
 import time
 import traceback
 import zipfile
@@ -31,31 +30,20 @@ from sandbox_exporter.flattener import load_flattener, DataFlattener
 from sandbox_exporter.s3 import S3Helper
 
 
-class SandboxExporter(object):
+class Exporter(object):
 
-    def __init__(self, bucket='usdot-its-cvpilot-public-data', log=False,
-                output_convention='{pilot}_{message_type}_{sdate}_{edate}',
-                aws_profile=None, verbose=False):
-        # set up
-        self.bucket = bucket
+    def __init__(self, log=False, output_convention='', verbose=False):
         self.output_convention = output_convention
-        self.aws_profile = aws_profile
-        self.s3helper = S3Helper(aws_profile=aws_profile, verbose=verbose)
         self.verbose = verbose
         self.print_func = print
 
         if log:
-            logging.basicConfig(filename='sandbox_to_csv.log', format='%(asctime)s %(message)s')
+            logging.basicConfig(filename='exporter.log', format='%(asctime)s %(message)s')
             logger = logging.getLogger()
             logger.setLevel(logging.INFO)
             self.print_func = logger.info
         if not log and not verbose:
-            self.print_func = lambda x: x
-
-    def get_folder_prefix(self, pilot, message_type, dt):
-        y,m,d,h = dt.strftime('%Y-%m-%d-%H').split('-')
-        folder = '{}/{}/{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m, d, h)
-        return folder
+            self.print_func = lambda x: 1
 
     def write_json_newline(self, recs, fp):
         with open(fp, 'w') as outfile:
@@ -64,9 +52,11 @@ class SandboxExporter(object):
                 outfile.write('\n')
 
     def write_csv(self, recs, fp, flattener=DataFlattener()):
-        flat_recs = []
-        for r in recs:
-            flat_recs += flattener.process_and_split(r)
+        
+        if flattener:
+            flat_recs = [rr for r in recs for rr in flattener.process_and_split(r)]
+        else:
+            flat_recs = recs
 
         with open(fp, mode='w') as csv_file:
             field_names = reduce(lambda x, y: set(list(x)+list(y)), flat_recs)
@@ -84,6 +74,28 @@ class SandboxExporter(object):
                 outzip.write(fp, compress_type=zipfile.ZIP_DEFLATED)
                 os.remove(fp)
         self.print_func('Output zip file containing {} files at:\n{}'.format(len(filenames), outfp))
+
+
+class SandboxExporter(Exporter):
+
+    def __init__(self, bucket='usdot-its-cvpilot-public-data', 
+                output_convention='{pilot}_{message_type}_{sdate}_{edate}',
+                aws_profile=None, verbose=True, **kwargs):
+
+        super(SandboxExporter, self).__init__(verbose=verbose, **kwargs)
+        # set up
+        self.bucket = bucket
+        self.output_convention = output_convention
+        self.aws_profile = aws_profile
+        self.s3helper = S3Helper(aws_profile=aws_profile, verbose=verbose)
+
+    def get_folder_prefix(self, pilot, message_type, dt):
+        y,m,d,h = dt.strftime('%Y-%m-%d-%H').split('-')
+        if 'workzone' in self.bucket:
+            folder = '{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m)
+        else:
+            folder = '{}/{}/{}/{}/{}'.format(pilot, message_type.upper(), y, m, d)
+        return folder
 
     def clean_dates(self, sdate, edate):
         if type(sdate) != datetime:
@@ -135,7 +147,7 @@ class SandboxExporter(object):
         prefixes = self.get_prefixes(sdate, edate, pilot, message_type)
         generator = self.s3helper.select(prefixes=" ".join(prefixes), count=True,
                                          output_fields=output_fields, where=where)
-        count = int(list(generator)[0])
+        count = sum([int(i) for i in list(generator)])
         for info in self.s3helper.info:
             self.print_func(info)
         return count
@@ -144,6 +156,8 @@ class SandboxExporter(object):
                        limit=0, output_fields=None, where=None, csv=False, zip_files=False):
         t0 = time.time()
         sdate, edate = self.clean_dates(sdate, edate)
+        self.print_func('===========START===========')
+        self.print_func(f"Exporting {pilot} {message_type} data between {sdate.strftime('%Y-%m-%d-%H')} and {edate.strftime('%Y-%m-%d-%H')}")
         generator = self.get_record_generator(sdate, edate, pilot, message_type,
                                             limit, output_fields, where)
         fp_params = {
@@ -172,7 +186,7 @@ class SandboxExporter(object):
                 else:
                     filename = fp(filenum)+'.txt'
                     self.write_json_newline(records, filename)
-                self.print_func('Wrote {} recs to {}'.format(len(records), filename))
+                self.print_func(f'Wrote {len(records)} recs to {filename}')
                 filenames.append(filename)
                 records = []
                 filenum += 1
@@ -183,7 +197,7 @@ class SandboxExporter(object):
             else:
                 filename = fp(filenum)+'.txt'
                 self.write_json_newline(records, filename)
-            self.print_func('Wrote {} recs to {}'.format(len(records), filename))
+            self.print_func(f'Wrote {len(records)} recs to {filename}')
             filenames.append(filename)
             records = []
             filenum += 1
@@ -198,7 +212,7 @@ class SandboxExporter(object):
 
         for info in self.s3helper.info:
             self.print_func(info)
-        self.print_func('Process took {} minutes'.format((t1-t0)/60))
+        self.print_func(f'Process took {(t1-t0)/60} minutes')
         self.print_func('============END============')
 
 
@@ -223,7 +237,7 @@ if __name__ == '__main__':
                             Message type (options: bsm, tim, spat). Default: tim
       --sdate SDATE         Starting generatedAt date of your data, in the format
                             of YYYY-MM-DD.
-      --edate EDATE         Ending generatedAt date of your data, in the format of
+      --edate EDATE         Ending generatedAt date of your data (exclusive), in the format of
                             YYYY-MM-DD. If not supplied, this will be set to 24
                             hours from the start date.
       --output_convention OUTPUT_CONVENTION
@@ -275,7 +289,7 @@ if __name__ == '__main__':
     """
 
     parser = ArgumentParser(description="Script for exporting ITS sandbox data from specified date range to merged CSV files")
-    parser.add_argument('--bucket', default="test-usdot-its-cvpilot-public-data", help="Name of the s3 bucket. Default: usdot-its-cvpilot-public-data")
+    parser.add_argument('--bucket', default="usdot-its-cvpilot-public-data", help="Name of the s3 bucket. Default: usdot-its-cvpilot-public-data")
     parser.add_argument('--pilot', default="wydot", help="Pilot name (options: wydot, thea). Default: wydot")
     parser.add_argument('--message_type', default="tim", help="Message type (options: bsm, tim, spat). Default: tim")
     parser.add_argument('--sdate', default=None, required=True, help="Starting generatedAt date of your data, in the format of YYYY-MM-DD.")

@@ -191,7 +191,6 @@ class S3Helper(AWSHelper):
         while True:
             line = process.stdout.readline().rstrip()
             if not line:
-                print('NO LINE')
                 last_err = None
                 while True:
                     stderr = process.stderr.readline()

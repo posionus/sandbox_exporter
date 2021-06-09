@@ -46,6 +46,8 @@ class DataFlattener(object):
                 # expand dict
                 else:
                     return [ (key + '_' + k, v) for k, v in self.flatten_dict(value, json_string_fields).items() ]
+            elif key in json_string_fields:
+                return [(key, json.dumps(value))]
             else:
                 return [ (key, value) ]
 

@@ -55,7 +55,8 @@ class WzdxV3Flattener(WzdxV2Flattener):
         super(WzdxV3Flattener, self).__init__(*args, **kwargs)
         self.json_string_fields = [
             'lanes', 'geometry', 'restrictions', 'types_of_work',
-            'relationship_first', 'relationship_next', 'relationship_parents', 'relationship_children'
+            'relationship_first', 'relationship_next', 'relationship_parents', 'relationship_children',
+            'road_names', 'feed_bbox', 'road_event_bbox'
         ]
 
     def create_data_source_dict(self, data_sources):
@@ -74,9 +75,21 @@ class WzdxV3Flattener(WzdxV2Flattener):
             temp = {k:v for k,v in feature['properties'].items()}
             temp['geometry'] = feature['geometry']
             temp['road_event_feed_info'] = raw_rec['road_event_feed_info']
-            data_source_id = feature['properties']['data_source_id']
+            data_source_id = feature['properties']['data_source_id']            
             if data_source_id in data_source_dict:
                 temp.update(data_source_dict[data_source_id])
+            
+            # v3.1 modifications
+            if feature.get('id') and temp.get('road_event_id') is None:
+                temp['road_event_id'] = feature['id']
+            if 'road_names' not in temp:
+                temp['road_names'] = [temp.get('road_name'), temp.get('road_number')]
+                temp['road_names'] = [i for i in temp['road_names'] if i]
+            if 'bbox' in raw_rec:
+                temp['feed_bbox'] = raw_rec['bbox']
+            if 'bbox' in feature:
+                temp['road_event_bbox'] = feature['bbox']
+
             out_recs.append(temp)
         return [self.process(out_rec) for out_rec in out_recs]
 

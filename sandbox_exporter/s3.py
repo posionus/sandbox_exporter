@@ -130,6 +130,23 @@ class S3Helper(AWSHelper):
                 break
         return bucket_key_tuples
 
+    def get_fp_chunks_from_prefix(self, s3_source_kwargs):
+        '''
+        initial s3_source_kwargs looks like:
+        dict(
+            Bucket=bucket,
+            Prefix=prefix
+        )
+        '''
+        resp = self.client.list_objects_v2(**s3_source_kwargs)
+        if not resp.get('Contents'):
+            return [], None
+        bucket_key_tuples = [(s3_source_kwargs['Bucket'], i['Key']) for i in resp['Contents']]
+        if not resp.get('NextContinuationToken'):
+            return bucket_key_tuples, None
+        s3_source_kwargs['ContinuationToken'] = resp['NextContinuationToken']
+        return bucket_key_tuples, s3_source_kwargs
+
     def select(self, prefixes, thread_count=150,
             count=False, limit=0, output_fields=None, where=None):
         """

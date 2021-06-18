@@ -19,7 +19,7 @@ class NycdotEVENTFlattener(CvDataFlattener):
     def add_enhancements(self, r):
         r['yearMonthBin'] = r['eventHeader_eventTimeBin'][:7]
         r['dayOfWeekBin'], r['timeOfDayBin'] = r['eventHeader_eventTimeBin'].split('-')[-2:]
-        if r['eventHeader_eventLocationBin'] != 'N/A':
+        if r['eventHeader_eventLocationBin'] not in {'N/A', 'nonNYC'}:
             r['nearRSU'] = r['eventHeader_eventLocationBin'].split('-')[0]=='CV'
             r['bureauBin'], r['roadType'] = r['eventHeader_eventLocationBin'].split('-')[-2:]
         return r

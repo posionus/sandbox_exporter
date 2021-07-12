@@ -418,7 +418,7 @@ class CvPilotFileMover(S3Helper):
 
             target_filename = '-'.join([filename_prefix, message_type.lower(), 'public', str(stream_version), ymdhms, uuid4])
             target_prefix = os.path.join(pilot_name, message_type, y, m, d, h)
-            target_key = os.path.join(target_prefix, target_filename)
+            target_key = os.path.join(target_prefix, target_filename).replace(".gz", "")
             return target_key
 
         self.pilot_name  = pilot_name

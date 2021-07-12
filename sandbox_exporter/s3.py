@@ -130,6 +130,23 @@ class S3Helper(AWSHelper):
                 break
         return bucket_key_tuples
 
+    def get_fp_chunks_from_prefix(self, s3_source_kwargs):
+        '''
+        initial s3_source_kwargs looks like:
+        dict(
+            Bucket=bucket,
+            Prefix=prefix
+        )
+        '''
+        resp = self.client.list_objects_v2(**s3_source_kwargs)
+        if not resp.get('Contents'):
+            return [], None
+        bucket_key_tuples = [(s3_source_kwargs['Bucket'], i['Key']) for i in resp['Contents']]
+        if not resp.get('NextContinuationToken'):
+            return bucket_key_tuples, None
+        s3_source_kwargs['ContinuationToken'] = resp['NextContinuationToken']
+        return bucket_key_tuples, s3_source_kwargs
+
     def select(self, prefixes, thread_count=150,
             count=False, limit=0, output_fields=None, where=None):
         """
@@ -258,6 +275,38 @@ class S3Helper(AWSHelper):
                 self.err_lines.append(line)
             line = data_stream.readline()
 
+    def nycdot_rec_generator(self, data_stream):
+        """
+        Receives a data stream that is assumed to be in the NYCDOT CVP batch JSON format
+        (prettified json concatenated), reads and returns these records as
+        dictionary objects one at a time.
+
+        Parameters:
+            data_stream: "Readable" file datastream objects
+
+        Returns:
+            Iterable array of dictionary objects
+        """
+        line = data_stream.readline()
+        temp_string = ''
+        while line:
+            if type(line) == bytes:
+                line_stripped = line.strip(b'\n').decode('utf-8')
+            else:
+                line_stripped = line.strip('\n')
+
+            if line_stripped == '}{':
+                temp_string += '}'
+                rec = json.loads(temp_string)
+                temp_string = '{'
+                yield rec
+            else:
+                temp_string += line_stripped
+            line = data_stream.readline()
+        if temp_string:
+            rec = json.loads(temp_string)
+            yield rec
+
     def write_recs(self, recs, bucket, key):
         """
         Writes the array of dictionary objects as newline json text file to the
@@ -377,6 +426,15 @@ class CvPilotFileMover(S3Helper):
         return outfp_func
 
     def get_ymdh(self, rec):
+        # nycdot version
+        time_bin = rec.get('eventHeader', {}).get('eventTimeBin', '').replace('/', '')
+        if time_bin:
+            event_time_bin_array = time_bin.split('-')
+            if len(event_time_bin_array[0]) == 2:
+                event_time_bin_array[0] = '20'+event_time_bin_array[0]
+            recordGeneratedAt_ymdh = '-'.join(event_time_bin_array)
+            return recordGeneratedAt_ymdh
+        # other cvp version
         recordGeneratedAt = rec['metadata'].get('recordGeneratedAt')
         if not recordGeneratedAt:
             recordGeneratedAt = rec['payload']['data']['timeStamp']
@@ -397,53 +455,43 @@ class CvPilotFileMover(S3Helper):
         self.print_func('Triggered by file: {}'.format(source_path))
 
         data_stream = self.get_data_stream(source_bucket, source_key)
-        if 'nycdot-ingest' in source_bucket:
-            data = data_stream.read()
-            event_record = json.loads(data)
-            event_time_bin = event_record['eventHeader']['eventTimeBin'].replace('/', '')
-            event_time_bin_array = event_time_bin.split('-')
-            if len(event_time_bin_array[0]) == 2:
-                event_time_bin_array[0] = '20'+event_time_bin_array[0]
-            event_time_bin_processed = '/'.join(event_time_bin_array)
-            source_key_processed = source_key.split('/')[-1].replace(".gz", "")
-            target_key = f"nycdot/EVENT/{event_time_bin_processed}/{source_key_processed}"
-            
-            # copy data
-            self.print_func('Writing event log from \n{} -> \n{}/{}'.format(source_path, self.target_bucket, target_key))
-            self.write_recs([event_record], self.target_bucket, target_key)
-            self.print_func('File written')
-        else:
-            # sort all files by generatedAt timestamp ymdh
-            ymdh_data_dict = {}
         
-            for rec in self.newline_json_rec_generator(data_stream):
-                recordGeneratedAt_ymdh = self.get_ymdh(rec)
-                if recordGeneratedAt_ymdh not in ymdh_data_dict:
-                    ymdh_data_dict[recordGeneratedAt_ymdh] = []
-                ymdh_data_dict[recordGeneratedAt_ymdh].append(rec)
+        # sort all files by generatedAt timestamp ymdh
+        ymdh_data_dict = {}
 
-            # generate output path
-            outfp_func = self.generate_outfp(ymdh_data_dict, source_bucket, source_key)
-            if outfp_func is None:
-                return
+        if 'nycdot-ingest' in source_bucket:
+            rec_generator = self.nycdot_rec_generator
+        else:
+            rec_generator = self.newline_json_rec_generator
+    
+        for rec in rec_generator(data_stream):
+            recordGeneratedAt_ymdh = self.get_ymdh(rec)
+            if recordGeneratedAt_ymdh not in ymdh_data_dict:
+                ymdh_data_dict[recordGeneratedAt_ymdh] = []
+            ymdh_data_dict[recordGeneratedAt_ymdh].append(rec)
 
-            for ymdh, recs in ymdh_data_dict.items():
-                target_key = outfp_func(ymdh)
-                target_path = os.path.join(self.target_bucket, target_key)
+        # generate output path
+        outfp_func = self.generate_outfp(ymdh_data_dict, source_bucket, source_key)
+        if outfp_func is None:
+            return
 
-                # copy data
-                self.print_func('Writing {} records from \n{} -> \n{}'.format(len(recs), source_path, target_path))
-                self.write_recs(recs, self.target_bucket, target_key)
-                self.print_func('File written')
-                if self.queues:
-                    for queue in self.queues:
-                        msg = {
-                        'bucket': self.target_bucket,
-                        'key': target_key,
-                        'pilot_name': self.pilot_name,
-                        'message_type': self.message_type.lower()
-                        }
-                        queue.send_message(MessageBody=json.dumps(msg))
+        for ymdh, recs in ymdh_data_dict.items():
+            target_key = outfp_func(ymdh)
+            target_path = os.path.join(self.target_bucket, target_key)
+
+            # copy data
+            self.print_func('Writing {} records from \n{} -> \n{}'.format(len(recs), source_path, target_path))
+            self.write_recs(recs, self.target_bucket, target_key)
+            self.print_func('File written')
+            if self.queues:
+                for queue in self.queues:
+                    msg = {
+                    'bucket': self.target_bucket,
+                    'key': target_key,
+                    'pilot_name': self.pilot_name,
+                    'message_type': self.message_type.lower()
+                    }
+                    queue.send_message(MessageBody=json.dumps(msg))
 
         if len(self.err_lines) > 0:
             self.print_func('{} lines not read in file. Keep file at: {}'.format(len(self.err_lines), source_path))

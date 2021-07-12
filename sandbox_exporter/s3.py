@@ -71,12 +71,12 @@ class S3Helper(AWSHelper):
     Helper class for connecting to and working with AWS S3.
 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Initialization function of the S3Helper class.
 
         """
-        super(S3Helper, self).__init__(**kwargs)
+        super(S3Helper, self).__init__(*args, **kwargs)
         self.client = self._get_client()
         self.info = []
         self.err_lines = []

@@ -365,13 +365,14 @@ class S3Helper(AWSHelper):
 
 class CvPilotFileMover(S3Helper):
 
-    def __init__(self, source_bucket_prefix='usdot-its-datahub-', source_key_prefix=None, validation_queue_names=[], *args, **kwargs):
+    def __init__(self, target_bucket, source_bucket_prefix='usdot-its-datahub-', source_key_prefix=None, validation_queue_names=[], *args, **kwargs):
         super(CvPilotFileMover, self).__init__(*args, **kwargs)
         self.source_bucket_prefix = source_bucket_prefix
         self.source_key_prefix = source_key_prefix or ''
         self.queues = []
         self.pilot_name = None
         self.message_type = None
+        self.target_bucket = target_bucket
 
         if validation_queue_names:
             for validation_queue_name in validation_queue_names:

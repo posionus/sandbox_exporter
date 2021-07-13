@@ -380,76 +380,6 @@ class CvPilotFileMover(S3Helper):
                 queue = sqs.get_queue_by_name(QueueName=validation_queue_name)
                 self.queues.append(queue)
 
-    def generate_outfp(self, ymdh_data_dict, source_bucket, source_key):
-        if not ymdh_data_dict:
-            self.print_func('File is empty: s3://{}/{}'.format(source_bucket, source_key))
-            return None
-
-        original_ymdh = "-".join(source_key.split('/')[-5:-1])
-        no_change = "".join(ymdh_data_dict.keys()) == original_ymdh
-
-        filename_prefix = self.target_bucket.replace('-public-data', '')
-        regex_str = r'(?:test-)?{}(.*)-ingest'.format(self.source_bucket_prefix)
-        regex_finds = re.findall(regex_str, source_bucket)
-        if len(regex_finds) == 0:
-            # if source bucket is sandbox
-            pilot_name = source_key.split('/')[0]
-            message_type = source_key.split('/')[1]
-            stream_version = '0'
-            if no_change and source_bucket == self.target_bucket:
-                self.print_func('No need to reorder data at s3://{}/{}'.format(source_bucket, source_key))
-                return None
-        else:
-            pilot_name = regex_finds[0].lower()
-            message_type = source_key.strip(self.source_key_prefix).split('/')[0]
-
-            # get stream version
-            regex_str2 = filename_prefix+r'-(?:.*)-public-(\d)-(?:.*)'
-            stream_version_res = re.findall(regex_str2, source_key)
-            if not stream_version_res:
-                stream_version = '0'
-            else:
-                stream_version = stream_version_res[0]
-
-        def outfp_func(ymdh):
-            y,m,d,h = ymdh.split('-')
-            ymdhms = '{}-00-00'.format(ymdh)
-            uuid4 = str(uuid.uuid4())
-
-            target_filename = '-'.join([filename_prefix, message_type.lower(), 'public', str(stream_version), ymdhms, uuid4])
-            target_prefix = os.path.join(pilot_name, message_type, y, m, d, h)
-            target_key = os.path.join(target_prefix, target_filename).replace(".gz", "")
-            return target_key
-
-        self.pilot_name  = pilot_name
-        self.message_type = message_type
-
-        return outfp_func
-
-    def get_ymdh(self, rec):
-        # nycdot version
-        time_bin = rec.get('eventHeader', {}).get('eventTimeBin', '').replace('/', '')
-        if time_bin:
-            event_time_bin_array = time_bin.split('-')
-            if len(event_time_bin_array[0]) == 2:
-                event_time_bin_array[0] = '20'+event_time_bin_array[0]
-            recordGeneratedAt_ymdh = '-'.join(event_time_bin_array)
-            return recordGeneratedAt_ymdh
-        # other cvp version
-        recordGeneratedAt = rec['metadata'].get('recordGeneratedAt')
-        if not recordGeneratedAt:
-            recordGeneratedAt = rec['payload']['data']['timeStamp']
-        try:
-            dt = datetime.strptime(recordGeneratedAt[:14].replace('T', ' '), '%Y-%m-%d %H:')
-        except:
-            self.print_func(traceback.format_exc())
-            recordReceivedAt = rec['metadata'].get('odeReceivedAt')
-            dt = datetime.strptime(recordReceivedAt[:14].replace('T', ' '), '%Y-%m-%d %H:')
-            self.print_func('Unable to parse {} timestamp. Using odeReceivedAt timestamp of {}'.format(recordGeneratedAt, recordReceivedAt))
-        recordGeneratedAt_ymdh = datetime.strftime(dt, '%Y-%m-%d-%H')
-        return recordGeneratedAt_ymdh
-
-
     def move_file(self, source_bucket, source_key):
         # read triggering file
         source_path = os.path.join(source_bucket, source_key)
@@ -500,3 +430,77 @@ class CvPilotFileMover(S3Helper):
             self.print_func('Delete file: {}'.format(source_path))
             self.delete_file(source_bucket, source_key)
         return
+
+    def get_ymdh(self, rec):
+        # nycdot version
+        time_bin = rec.get('eventHeader', {}).get('eventTimeBin', '').replace('/', '')
+        if time_bin:
+            event_time_bin_array = time_bin.split('-')
+            if len(event_time_bin_array[0]) == 2:
+                event_time_bin_array[0] = '20'+event_time_bin_array[0]
+            recordGeneratedAt_ymdh = '-'.join(event_time_bin_array)
+            return recordGeneratedAt_ymdh
+        # other cvp version
+        recordGeneratedAt = rec['metadata'].get('recordGeneratedAt')
+        if not recordGeneratedAt:
+            recordGeneratedAt = rec['payload']['data']['timeStamp']
+        try:
+            dt = datetime.strptime(recordGeneratedAt[:14].replace('T', ' '), '%Y-%m-%d %H:')
+        except:
+            self.print_func(traceback.format_exc())
+            recordReceivedAt = rec['metadata'].get('odeReceivedAt')
+            dt = datetime.strptime(recordReceivedAt[:14].replace('T', ' '), '%Y-%m-%d %H:')
+            self.print_func('Unable to parse {} timestamp. Using odeReceivedAt timestamp of {}'.format(recordGeneratedAt, recordReceivedAt))
+        recordGeneratedAt_ymdh = datetime.strftime(dt, '%Y-%m-%d-%H')
+        return recordGeneratedAt_ymdh
+
+    def generate_outfp(self, ymdh_data_dict, source_bucket, source_key):
+        if not ymdh_data_dict:
+            self.print_func('File is empty: s3://{}/{}'.format(source_bucket, source_key))
+            return None
+        
+        regex_str = r'(?:test-)?{}(.*)-ingest'.format(self.source_bucket_prefix)
+        regex_finds = re.findall(regex_str, source_bucket)
+        if len(regex_finds) == 0:
+            # if source bucket is sandbox
+            pilot_name = source_key.split('/')[0]
+            message_type = source_key.split('/')[1]
+            stream_version = '0'
+
+            original_ymdh = "-".join(source_key.split('/')[-5:-1])
+            no_change = "".join(ymdh_data_dict.keys()) == original_ymdh
+
+            if no_change and source_bucket == self.target_bucket:
+                self.print_func('No need to reorder data at s3://{}/{}'.format(source_bucket, source_key))
+                return None
+        else:
+            # if source bucket is ingest bucket
+            pilot_name = regex_finds[0].lower()
+            if pilot_name == 'nycdot':
+                message_type = 'EVENT'
+            else:
+                message_type = source_key.strip(self.source_key_prefix).split('/')[0]
+
+            # get stream version
+            filename_prefix = self.target_bucket.replace('-public-data', '')
+            regex_str2 = filename_prefix+r'-(?:.*)-public-(\d)-(?:.*)'
+            stream_version_res = re.findall(regex_str2, source_key)
+            if not stream_version_res:
+                stream_version = '0'
+            else:
+                stream_version = stream_version_res[0]
+
+        def outfp_func(ymdh):
+            y,m,d,h = ymdh.split('-')
+            ymdhms = '{}-00-00'.format(ymdh)
+            uuid4 = str(uuid.uuid4())
+
+            target_filename = '-'.join([filename_prefix, message_type.lower(), 'public', str(stream_version), ymdhms, uuid4])
+            target_prefix = os.path.join(pilot_name, message_type, y, m, d, h)
+            target_key = os.path.join(target_prefix, target_filename).replace(".gz", "")
+            return target_key
+
+        self.pilot_name  = pilot_name
+        self.message_type = message_type
+
+        return outfp_func

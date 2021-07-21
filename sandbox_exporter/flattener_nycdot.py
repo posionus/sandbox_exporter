@@ -76,14 +76,14 @@ class NycdotEVENTFlattener(CvDataFlattener):
             r['dayOfWeekBin'] = 'N/A'
             r['timeOfDayBin'] = 'N/A'
         
-        if r['eventHeader_eventLocationBin'] != 'N/A':
-            try:
-                r['nearRSU'] = r['eventHeader_eventLocationBin'].split('-')[0]=='CV'
-                r['bureauBin'], r['roadType'] = r['eventHeader_eventLocationBin'].split('-')[-2:]
-            except:
-                r['nearRSU'] = None
-                r['bureauBin'] = 'N/A'
-                r['roadType'] = 'N/A'
+        try:
+            # this will catch cases when eventHeader_eventLocationBin == 'N/A' or is in an unexpected format
+            r['nearRSU'] = r['eventHeader_eventLocationBin'].split('-')[0]=='CV'
+            r['bureauBin'], r['roadType'] = r['eventHeader_eventLocationBin'].split('-')[-2:]
+        except:
+            r['nearRSU'] = None
+            r['bureauBin'] = 'N/A'
+            r['roadType'] = 'N/A'
         return r
 
     def process(self, raw_rec):

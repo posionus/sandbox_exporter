@@ -1,4 +1,4 @@
-import copy
+sandbox_exporter/flattener_nycdot.pyimport copy
 
 from sandbox_exporter.flattener import CvDataFlattener
 
@@ -81,6 +81,7 @@ class NycdotEVENTFlattener(CvDataFlattener):
                 r['nearRSU'] = r['eventHeader_eventLocationBin'].split('-')[0]=='CV'
                 r['bureauBin'], r['roadType'] = r['eventHeader_eventLocationBin'].split('-')[-2:]
             except:
+                r['nearRSU'] = None
                 r['bureauBin'] = 'N/A'
                 r['roadType'] = 'N/A'
         return r

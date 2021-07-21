@@ -1,4 +1,4 @@
-sandbox_exporter/flattener_nycdot.pyimport copy
+import copy
 
 from sandbox_exporter.flattener import CvDataFlattener
 

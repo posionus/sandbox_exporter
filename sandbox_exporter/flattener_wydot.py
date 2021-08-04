@@ -147,7 +147,7 @@ class WydotBSMFlattener(CvDataFlattener):
             out['coreData_position'] = "POINT ({} {})".format(out['coreData_position_long'], out['coreData_position_lat'])
 
         metadata_receivedAt = dateutil.parser.parse(out['metadata_receivedAt'][:23])
-        out['metadata_receivedAt'] = metadata_receivedAt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
+        out['metadata_receivedAt'] = metadata_receivedAt.isoformat()
 
         return out
 

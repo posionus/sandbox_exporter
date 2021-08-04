@@ -55,6 +55,7 @@ class SocrataDataset(object):
         float_fields = float_fields or self.float_fields
 
         def calendar_date(x):
+            x = x.replace('[UTC]', '')
             dt = dateutil.parser.parse(x)
             if dt.tzinfo:
                 dt = dt - dt.utcoffset()

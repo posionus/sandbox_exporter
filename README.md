@@ -58,7 +58,7 @@ files or JSON newline files.
 optional arguments:
   -h, --help            show this help message and exit
   --bucket BUCKET       Name of the s3 bucket. Default: usdot-its-cvpilot-
-                        public-data
+                        publicdata
   --pilot PILOT         Pilot name (options: wydot, thea). Default: wydot
   --message_type MESSAGE_TYPE
                         Message type (options: bsm, tim, spat). Default: tim

@@ -10,7 +10,7 @@ setuptools.setup(
     description="S3 select utility package",
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/usdot-its-jpo-data-portal/sandbox_exporter",
+    url="https://github.com/posionus/sandbox_exporter",
     packages=['sandbox_exporter'],
     classifiers=[
         'Programming Language :: Python :: 3.7',
@@ -22,6 +22,5 @@ setuptools.setup(
                       'boto3>=1.7.79',
                       'sodapy==2.0.0',
                       'python-dateutil==2.8.1',
-                      's3select @ git+https://github.com/usdot-its-jpo-data-portal/s3select@master#egg=s3select'
                       ]
 )

@@ -206,7 +206,8 @@ class S3Helper(AWSHelper):
         if self.queue_timeout:
             command_params['queue_timeout'] = f'-T {self.queue_timeout} '
 
-        command = 's3select {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{queue_timeout}{prefixes}'.format(**command_params)
+        s3select_path = os.path.join(os.path.split(os.path.abspath(__file__))[0], '../s3select/s3select.py')
+        command = 'python {} {where}{limit}{verbose}{count}{output_fields}{thread_count}{profile}{queue_timeout}{prefixes}'.format(s3select_path, **command_params)
         self.print_func(command)
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         while True:
